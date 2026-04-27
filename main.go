@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"log"
 	"math"
 	"net/url"
 	"os"
@@ -49,26 +48,38 @@ Defaults (de-facto standard):
 `
 
 func main() {
-	log.SetFlags(0) // remove datetime prefix from log.Fatal messages
 	if len(os.Args) != 1 {
 		_, _ = fmt.Fprint(os.Stderr, strings.Replace(usage, "totp-gen", filepath.Base(os.Args[0]), -1))
 		os.Exit(2)
 	}
 
-	const maxInputSize = 1024 * 16 // this is plenty for a secret or URI
-	secretOrURI, err := io.ReadAll(io.LimitReader(os.Stdin, maxInputSize+1))
+	err := run(os.Stdin, os.Stdout, time.Now())
 	if err != nil {
-		log.Fatal(err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+const maxInputSize = 1024 * 16 // this is plenty for a secret or URI
+
+func run(input io.Reader, output io.Writer, at time.Time) error {
+	secretOrURI, err := io.ReadAll(io.LimitReader(input, maxInputSize+1))
+	if err != nil {
+		return fmt.Errorf("error reading input: %w", err)
 	}
 	if len(secretOrURI) > maxInputSize {
-		log.Fatal("input too large")
+		return errors.New("input too large")
 	}
 
 	totp, err := parseSecretOrURI(strings.TrimSpace(string(secretOrURI)))
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error parsing input: %w", err)
 	}
-	fmt.Println(totp.Generate(time.Now()))
+	_, err = fmt.Fprintln(output, totp.Generate(at))
+	if err != nil {
+		return fmt.Errorf("error writing output: %w", err)
+	}
+	return nil
 }
 
 type TOTP struct {
