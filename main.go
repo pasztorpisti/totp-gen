@@ -18,7 +18,7 @@ import (
 	"math"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +51,7 @@ Defaults (de-facto standard):
 func main() {
 	log.SetFlags(0) // remove datetime prefix from log.Fatal messages
 	if len(os.Args) != 1 {
-		_, _ = fmt.Fprint(os.Stderr, strings.Replace(usage, "totp-gen", path.Base(os.Args[0]), -1))
+		_, _ = fmt.Fprint(os.Stderr, strings.Replace(usage, "totp-gen", filepath.Base(os.Args[0]), -1))
 		os.Exit(2)
 	}
 
