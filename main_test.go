@@ -269,6 +269,22 @@ func TestParseURI(t *testing.T) {
 		requireNoError(t, err)
 		requireTOTP(t, []byte("9876543210"), sha1Signature, 9, 30, totp)
 	})
+
+	t.Run("negative period", func(t *testing.T) {
+		_, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&period=-1")
+		requireError(t, err, `TOTP: invalid 'period' parameter: "-1" (requirement: 1 <= period)`)
+	})
+
+	t.Run("zero period", func(t *testing.T) {
+		_, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&period=0")
+		requireError(t, err, `TOTP: invalid 'period' parameter: "0" (requirement: 1 <= period)`)
+	})
+
+	t.Run("valid period", func(t *testing.T) {
+		totp, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&period=1")
+		requireNoError(t, err)
+		requireTOTP(t, []byte("9876543210"), sha1Signature, 6, 1, totp)
+	})
 }
 
 func requireTOTP(t *testing.T, secret []byte, algorithmSignature string, digits, period int, totp *TOTP) {

@@ -172,8 +172,9 @@ func parseURI(totpURI string) (*TOTP, error) {
 
 	if q.Has("period") {
 		v, err := strconv.ParseUint(q.Get("period"), 10, 31)
-		if err != nil {
-			return nil, fmt.Errorf("TOTP: invalid 'period' parameter: %q", q.Get("period"))
+		if err != nil || v < 1 {
+			// Google Authenticator allows 1..300 seconds. We don't set an upper limit.
+			return nil, fmt.Errorf("TOTP: invalid 'period' parameter: %q (requirement: 1 <= period)", q.Get("period"))
 		}
 		totp.Period = int(v)
 	}
