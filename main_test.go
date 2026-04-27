@@ -140,6 +140,33 @@ func TestParseURI(t *testing.T) {
 		_, err := parseURI("otpauth://totp/LABEL?")
 		requireError(t, err, "empty secret")
 	})
+
+	t.Run("negative digits", func(t *testing.T) {
+		_, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&digits=-1")
+		requireError(t, err, `TOTP: invalid 'digits' parameter: "-1" (requirement: 1 <= digits <= 9)`)
+	})
+
+	t.Run("zero digits", func(t *testing.T) {
+		_, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&digits=0")
+		requireError(t, err, `TOTP: invalid 'digits' parameter: "0" (requirement: 1 <= digits <= 9)`)
+	})
+
+	t.Run("too many digits", func(t *testing.T) {
+		_, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&digits=10")
+		requireError(t, err, `TOTP: invalid 'digits' parameter: "10" (requirement: 1 <= digits <= 9)`)
+	})
+
+	t.Run("minimum number of digits", func(t *testing.T) {
+		totp, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&digits=1")
+		requireNoError(t, err)
+		requireTOTP(t, []byte("9876543210"), sha1Signature, 1, 30, totp)
+	})
+
+	t.Run("maximum number of digits", func(t *testing.T) {
+		totp, err := parseURI("otpauth://totp/LABEL?secret=HE4DONRVGQZTEMJQ&digits=9")
+		requireNoError(t, err)
+		requireTOTP(t, []byte("9876543210"), sha1Signature, 9, 30, totp)
+	})
 }
 
 func requireTOTP(t *testing.T, secret []byte, algorithmSignature string, digits, period int, totp *TOTP) {

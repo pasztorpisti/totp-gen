@@ -151,8 +151,10 @@ func parseURI(totpURI string) (*TOTP, error) {
 
 	if q.Has("digits") {
 		v, err := strconv.ParseUint(q.Get("digits"), 10, 31)
-		if err != nil {
-			return nil, fmt.Errorf("TOTP: invalid 'digits' parameter: %q", q.Get("digits"))
+		if err != nil || v < 1 || v > 9 {
+			// The 0x7fffffff mask of the algorithm limits the max number of useful digits to 9.
+			// Google Authenticator allows only 6, 7, or 8 digits. We are less strict.
+			return nil, fmt.Errorf("TOTP: invalid 'digits' parameter: %q (requirement: 1 <= digits <= 9)", q.Get("digits"))
 		}
 		totp.Digits = int(v)
 	}
